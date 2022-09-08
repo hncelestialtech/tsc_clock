@@ -103,7 +103,6 @@ constructor void init_clock()
     syncTime(&delayed_tsc, &delayed_ns);
     double init_ns_per_tsc = (double)(delayed_ns - base_ns) / (delayed_tsc - base_tsc);
     saveParam(base_tsc, base_ns, base_ns, init_ns_per_tsc);
-    printf("init finish ns_per_tsc %lf base_tsc %ld\n", ns_per_tsc_, base_tsc_);
 }
 
 #ifdef __cplusplus

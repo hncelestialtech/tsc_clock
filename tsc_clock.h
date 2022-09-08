@@ -69,7 +69,7 @@ extern int64_t next_calibrate_tsc_;
 extern void calibrate(int64_t now_tsc);
 
 inline void calibrateCheck(int64_t now_tsc) {
-    if (unlikely(now_tsc < next_calibrate_tsc_)) return;
+    if (likely(now_tsc < next_calibrate_tsc_)) return;
     calibrate(now_tsc);
 }
 
