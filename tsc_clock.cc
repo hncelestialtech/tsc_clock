@@ -81,8 +81,7 @@ void saveParam(int64_t base_tsc, int64_t base_ns, int64_t sys_ns, double new_ns_
     ns_per_tsc_ = new_ns_per_tsc;
 }
 
-void calibrate(int64_t now_tsc) {
-    if (unlikely(now_tsc < next_calibrate_tsc_)) return;
+noinline void calibrate(int64_t now_tsc) {
     int64_t tsc, ns;
     syncTime(&tsc, &ns);
     int64_t calulated_ns = tsc2ns(tsc);
@@ -99,7 +98,6 @@ constructor void init_clock()
     calibate_interval_ns_ = CALIBRATE_INTERVAL_NS;
     int64_t base_tsc = 0, base_ns = 0;
     syncTime(&base_tsc, &base_ns);
-    // int64_t expire_ns = base_ns + INIT_CALIBRATE_NS;
     usleep(1000);
     int64_t delayed_tsc, delayed_ns;
     syncTime(&delayed_tsc, &delayed_ns);

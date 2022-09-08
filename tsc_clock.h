@@ -39,6 +39,9 @@ extern "C"
 #ifndef always_inline
 #define always_inline __attribute__((always_inline))
 #endif // always_inline
+#ifndef noinlnie
+#define noinline __attribute__((noinlnie))
+#endif // noinline
 
 #ifndef cold
 #define cold __attribute__((cold))
@@ -63,18 +66,22 @@ extern int64_t calibate_interval_ns_;
 extern int64_t base_ns_err_;
 extern int64_t next_calibrate_tsc_;
 
-extern void calibrate(int64_t tsc);
+extern void calibrate(int64_t now_tsc);
 
-inline int64_t rdtsc() 
+inline void calibrateCheck(int64_t now_tsc) {
+    if (unlikely(now_tsc < next_calibrate_tsc_)) return;
+    calibrate(now_tsc);
+}
+
+inline int64_t rdtsc()
 {
     int64_t tsc = __builtin_ia32_rdtsc();
-    calibrate(tsc);
+    calibrateCheck(tsc);
     return tsc;
 }
 
 inline int64_t tsc2ns(int64_t tsc) {
-    int64_t ns = base_ns_ + (int64_t)((tsc - base_tsc_) * ns_per_tsc_);
-    return ns;
+    return base_ns_ + (int64_t)((tsc - base_tsc_) * ns_per_tsc_);
 }
 
 inline int64_t rdsysns() 
