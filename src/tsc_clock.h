@@ -11,31 +11,31 @@ extern "C"
 {
 #endif
 
-#define NSPERSEC 1000000000
+struct tsc_clock_t {
+    double  ns_per_tsc;
+    int64_t base_tsc;
+    int64_t base_ns;
+    int64_t next_calibrate_tsc;
+};
 
-extern double ns_per_tsc_;
-extern int64_t base_tsc_;
-extern int64_t base_ns_;
-extern int64_t calibate_interval_ns_;
-extern int64_t base_ns_err_;
-extern int64_t next_calibrate_tsc_;
+extern __thread struct tsc_clock_t tsc_clock aligned_cache;
 
 extern void calibrate(int64_t now_tsc);
 
-inline void calibrateCheck(int64_t now_tsc) {
-    if (likely(now_tsc < next_calibrate_tsc_)) return;
+inline void calibrate_check(int64_t now_tsc) {
+    if (likely(now_tsc < tsc_clock.next_calibrate_tsc)) return;
     calibrate(now_tsc);
 }
 
 inline int64_t rdtsc()
 {
     int64_t tsc = __builtin_ia32_rdtsc();
-    calibrateCheck(tsc);
+    calibrate_check(tsc);
     return tsc;
 }
 
 inline int64_t tsc2ns(int64_t tsc) {
-    return base_ns_ + (int64_t)((tsc - base_tsc_) * ns_per_tsc_);
+    return tsc_clock.base_ns + (int64_t)((tsc - tsc_clock.base_tsc) * tsc_clock.ns_per_tsc);
 }
 
 inline int64_t rdsysns() 
