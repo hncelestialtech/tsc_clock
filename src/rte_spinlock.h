@@ -81,19 +81,6 @@ rte_spinlock_trylock (rte_spinlock_t *sl)
 }
 #endif
 
-/**
- * Test if the lock is taken.
- *
- * @param sl
- *   A pointer to the spinlock.
- * @return
- *   1 if the lock is currently taken; 0 otherwise.
- */
-static inline int rte_spinlock_is_locked (rte_spinlock_t *sl)
-{
-	return sl->locked;
-}
-
 #ifndef RTE_FORCE_INTRINSICS
 static inline void
 rte_spinlock_lock(rte_spinlock_t *sl)
