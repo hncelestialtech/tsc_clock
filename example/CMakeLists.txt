@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.12)
+project(test_clock C CXX)
+add_executable(tsc_clock tsc_clock_test.cc)
+target_include_directories(tsc_clock PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src)
+target_link_directories(tsc_clock PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src/build)
+target_link_libraries(tsc_clock PRIVATE tscns pthread)
