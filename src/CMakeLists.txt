@@ -8,6 +8,17 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_definitions("-Wall")
 
+if (${TSC_GLOBAL})
+     add_compile_definitions(TSC_GLOBAL)
+     set(tsc_src ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock_mt.c)
+else ()
+     set(tsc_src ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock_st.c)
+endif ()
+
+if (${LINK_INIT})
+     add_compile_definitions(LINK_INIT)
+endif ()
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
     message(STATUS "No CMAKE_BUILD_TYPE selected, config default value to ${CMAKE_BUILD_TYPE}")
@@ -34,9 +45,9 @@ else()
      endif()
 endif()
 
-add_library(tscns STATIC ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock.cc)
-add_library(tscns_s SHARED ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock.cc)
+add_library(tscns STATIC ${tsc_src})
+# add_library(tscns_s SHARED ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock.cc)
 target_link_libraries(tscns pthread)
-target_link_libraries(tscns_s pthread)
+# target_link_libraries(tscns_s pthread)
 
-set_target_properties(tscns_s PROPERTIES VERSION 0.0.0 SOVERSION 0)
+# set_target_properties(tscns_s PROPERTIES VERSION 0.0.0 SOVERSION 0)

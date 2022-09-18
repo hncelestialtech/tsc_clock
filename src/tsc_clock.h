@@ -18,8 +18,13 @@ struct tsc_clock_t {
     int64_t base_tsc;
     int64_t base_ns;
     int64_t next_calibrate_tsc;
+#ifdef TSC_GLOBAL
     int     global_tsc_fd;
     sem_t*  tsc_sem;
+#else
+    int64_t    calibrate_interval_ns;
+    int64_t    base_ns_err;
+#endif // TSC_GLOBAL
 };
 
 /**
@@ -27,7 +32,7 @@ struct tsc_clock_t {
  * 
  * @return int64_t tsc value
  */
-extern inline int64_t rdtsc_();
+inline int64_t rdtsc_();
 inline int64_t
 #ifdef TSC_FORCE_INTRINSICS
 rdtsc_()
@@ -49,7 +54,7 @@ extern struct tsc_clock_t tsc_clock aligned_cache;
  * @brief Calibrate the tsc register values with wall time
  * 
  */
-extern void calibrate();
+void calibrate();
 
 /**
  * @brief Check if clock calibration is required. Calibrate if required
@@ -58,7 +63,6 @@ extern void calibrate();
  */
 inline void calibrate_check(int64_t now_tsc) {
     if (likely(now_tsc < tsc_clock.next_calibrate_tsc)) return;
-    printf("calibrate\n");
     calibrate();
 }
 
@@ -70,9 +74,7 @@ inline void calibrate_check(int64_t now_tsc) {
 inline int64_t rdtsc()
 {
     int64_t tsc = rdtsc_();
-// #ifdef CALIBRATE_SYNC
     calibrate_check(tsc);
-// #endif // CALIBRATE_SYNC
     return tsc;
 }
 
