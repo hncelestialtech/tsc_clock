@@ -7,9 +7,9 @@ add_definitions("-Wall")
 
 if (${TSC_GLOBAL})
      add_compile_definitions(TSC_GLOBAL)
-     set(tsc_src ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock_mt.c)
+     set(tsc_src ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock_mt.cc)
 else ()
-     set(tsc_src ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock_st.c)
+     set(tsc_src ${CMAKE_CURRENT_SOURCE_DIR}/tsc_clock_st.cc)
 endif ()
 
 if (${LINK_INIT})
