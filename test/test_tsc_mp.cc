@@ -1,3 +1,4 @@
+#define TSC_GLOBAL
 #include "tsc_clock.h"
 #include <unistd.h>
 #include <iostream>
@@ -14,6 +15,7 @@ void test_rdns()
 
 int main()
 {
+    init_tsc_env();
     pid_t fpid;
     fpid = fork();
     if (fpid < 0)

@@ -18,14 +18,42 @@ struct tsc_clock_t {
     int64_t base_tsc;
     int64_t base_ns;
     int64_t next_calibrate_tsc;
-#ifdef TSC_GLOBAL
-    int     global_tsc_fd;
-    sem_t*  tsc_sem;
-#else
+#ifndef TSC_GLOBAL
     int64_t    calibrate_interval_ns;
     int64_t    base_ns_err;
 #endif // TSC_GLOBAL
 };
+
+#ifdef TSC_GLOBAL
+enum tsc_proc_t {
+    kTSC_PRIMARY = 0,
+    kTSC_SECONDARY
+};
+
+/**
+ * @brief Initialize tsc environment
+ * 
+ * When the input parameter is primary, the function is responsible 
+ * for initializing the tsc environment, and when the passed argument 
+ * is secondary, the function is responsible for getting the tsc 
+ * environment
+ * @param proc_role process type which kTSC_PRIMARY or kTSC_SECONDARY can 
+ *                  be passed
+ * @return int 
+ *  - On success, returns 0.
+ *  - On failure, returns -1.
+ */
+int init_tsc_env(tsc_proc_t proc_role=kTSC_SECONDARY);
+
+/**
+ * @brief Clean up the tsc environment
+ * 
+ * @return int 
+ *  - On success, returns 0.
+ *  - On failure, returns errno.
+ */
+int destroy_tsc_env();
+#endif // TSC_GLOBAL
 
 /**
  * @brief Gets the value of the tsc register without calibration

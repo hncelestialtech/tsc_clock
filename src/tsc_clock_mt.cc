@@ -39,21 +39,19 @@ struct global_tsc_clock_t {
     int                 magic;
 } aligned_cache;
 
-
 struct tsc_clock_t tsc_clock aligned_cache = {
     .ns_per_tsc = 0,
     .base_tsc = 0,
     .base_ns = 0,
     .next_calibrate_tsc = 0,
-    .global_tsc_fd = -1,
-    .tsc_sem = NULL
 };
+
+tsc_proc_t tsc_proc = kTSC_SECONDARY;
 
 struct global_tsc_clock_t* global_tsc_clock = NULL;
 
-static const char *default_config_dir = "/tmp";
+static const char *default_config_dir = "/dev/shm";
 static const char *global_tsc = "global_tsc";
-static const char *tsc_sem_name = "tsc_sem";
 
 #define TSC_FILE_FMT "%s/%s"
 static int
@@ -80,21 +78,6 @@ save_calibrate_param(struct global_tsc_clock_t* global_tsc_clock,
     global_tsc_clock->base_tsc = base_tsc;
     global_tsc_clock->base_ns = base_ns;
     global_tsc_clock->ns_per_tsc = new_ns_per_tsc;
-}
-
-static int
-notify_waiters()
-{
-    tsc_clock.tsc_sem = sem_open(tsc_sem_name, O_CREAT, 0666, 0);
-    if (tsc_clock.tsc_sem == SEM_FAILED) {
-        perror("Failed to get tsc sem");
-        return -1;
-    }
-    for(unsigned int i = 0; i < MAX_PROCESS; ++i)
-    {
-        sem_post(tsc_clock.tsc_sem);
-    }
-    return 0;
 }
 
 void 
@@ -133,7 +116,6 @@ init_global_tsc_clock(struct global_tsc_clock_t* global_tsc_clock)
     global_tsc_clock->calibrate_interval_ns = CALIBRATE_INTERVAL_NS;
     global_tsc_clock->base_ns_err = 0;
     global_tsc_clock->next_calibrate_tsc = 0;
-    global_tsc_clock->magic = TSC_MAGIC;
 
     sync_time(&base_tsc, &base_ns);
     global_tsc_clock->base_tsc = base_tsc;
@@ -146,7 +128,7 @@ init_global_tsc_clock(struct global_tsc_clock_t* global_tsc_clock)
     init_ns_per_tsc = (double)(delayed_ns - base_ns) / (delayed_tsc - base_tsc);
     save_calibrate_param(global_tsc_clock, base_tsc, base_ns, base_ns, init_ns_per_tsc);
 
-    notify_waiters();
+    global_tsc_clock->magic = TSC_MAGIC;
 }
 
 static void
@@ -162,20 +144,21 @@ static int
 create_global_tsc(const char* global_tsc_path, unsigned int pathlen)
 {
     int ret = 0;
-    tsc_clock.global_tsc_fd = open(global_tsc_path, O_CREAT|O_EXCL|O_RDWR, 0666);
-    if (tsc_clock.global_tsc_fd < 0) {
-        return errno;
-    }
-    
-    flock(tsc_clock.global_tsc_fd, LOCK_EX);
 
-    ret = ftruncate(tsc_clock.global_tsc_fd, sizeof(struct global_tsc_clock_t));
+    remove(global_tsc_path);
+    int global_tsc_fd = open(global_tsc_path, O_CREAT|O_EXCL|O_RDWR, 0666);
+    if (global_tsc_fd < 0)
+        return errno;
+    
+    flock(global_tsc_fd, LOCK_EX);
+
+    ret = ftruncate(global_tsc_fd, sizeof(struct global_tsc_clock_t));
     if (ret < 0) {
         ret = errno;
         goto out;
     }
     
-    global_tsc_clock = (struct global_tsc_clock_t *)mmap(NULL, sizeof(struct global_tsc_clock_t), PROT_READ | PROT_WRITE, MAP_SHARED, tsc_clock.global_tsc_fd, 0);
+    global_tsc_clock = (struct global_tsc_clock_t *)mmap(NULL, sizeof(struct global_tsc_clock_t), PROT_READ | PROT_WRITE, MAP_SHARED, global_tsc_fd, 0);
     if (global_tsc_clock == MAP_FAILED) {
         ret = -1;
         fprintf(stderr, "Failed to map global tsc clock file\n");
@@ -185,67 +168,56 @@ create_global_tsc(const char* global_tsc_path, unsigned int pathlen)
     init_global_tsc_clock(global_tsc_clock);
 
     init_local_tsc_clock(global_tsc_clock, &tsc_clock);
-
 out:
-    flock(tsc_clock.global_tsc_fd, LOCK_UN);
+    flock(global_tsc_fd, LOCK_UN);
+    close(global_tsc_fd);
     return ret;
-}
-
-static int
-wait_global_tsc_init()
-{
-    tsc_clock.tsc_sem = sem_open(tsc_sem_name, O_CREAT, 0666);
-    if (tsc_clock.tsc_sem == SEM_FAILED) {
-        perror("Failed to get tsc sem");
-        return -1;
-    }
-    sem_wait(tsc_clock.tsc_sem);
-    return 0;
 }
 
 static int
 attatch_global_tsc(const char* global_tsc_path, unsigned int pathlen)
 {
-    int ret = wait_global_tsc_init();
-    if (ret != 0)
-        return ret;
-
-    tsc_clock.global_tsc_fd = open(global_tsc_path, O_RDWR, 0666);
-    if (tsc_clock.global_tsc_fd < 0) {
+    int ret = 0;
+    int global_tsc_fd = open(global_tsc_path, O_RDWR, 0666);
+    if (global_tsc_fd < 0) {
         perror("Failed to open tsc global file");
-        return tsc_clock.global_tsc_fd;
+        return global_tsc_fd;
     }
 
-    flock(tsc_clock.global_tsc_fd, LOCK_SH);
+    flock(global_tsc_fd, LOCK_SH);
 
-    global_tsc_clock = (struct global_tsc_clock_t *)mmap(NULL, sizeof(struct global_tsc_clock_t), PROT_READ | PROT_WRITE, MAP_SHARED, tsc_clock.global_tsc_fd, 0);
+    global_tsc_clock = (struct global_tsc_clock_t *)mmap(NULL, sizeof(struct global_tsc_clock_t), PROT_READ | PROT_WRITE, MAP_SHARED, global_tsc_fd, 0);
     if (global_tsc_clock == MAP_FAILED) {
         fprintf(stderr, "Failed to map global tsc clock file\n");
         ret = -1;
         goto out;
     }
 
+    while (global_tsc_clock->magic != TSC_MAGIC)
+        __asm__ volatile("pause" :::"memory");
+    
     init_local_tsc_clock(global_tsc_clock, &tsc_clock);
 out:
-    flock(tsc_clock.global_tsc_fd, LOCK_UN);
+    flock(global_tsc_fd, LOCK_UN);
+    close(global_tsc_fd);
     return ret;
 }
 
-#ifdef LINK_INIT
-constructor
-#endif // LINK_INIT
 int
-init_tsc_env()
+init_tsc_env(tsc_proc_t proc_role)
 {
     char global_tsc_path[PATH_MAX];
-    int ret = -1;
+    tsc_proc = proc_role;
+    int ret = 0;
+    int err = -1;
     int pathlen = get_global_tsc_config_path(global_tsc_path, PATH_MAX, default_config_dir);
     if (pathlen < 0)
         return -1;
-    int err = create_global_tsc(global_tsc_path, pathlen);
-    if(err == EEXIST) 
-        ret = attatch_global_tsc(global_tsc_path, pathlen);
-    else if (err != 0)
+    if (tsc_proc == kTSC_PRIMARY)
+        err = create_global_tsc(global_tsc_path, pathlen);
+    else
+        err = attatch_global_tsc(global_tsc_path, pathlen);
+    if (err != 0)
         perror("Failed to init env");
     return ret;
 }
@@ -255,48 +227,23 @@ clean_global_tsc()
 {
     char global_tsc_path[PATH_MAX];
     int ret;
-    if (tsc_clock.global_tsc_fd < 0) {
-        return -1;
-    }
-    close(tsc_clock.global_tsc_fd);
     ret = get_global_tsc_config_path(global_tsc_path, PATH_MAX, default_config_dir);
     if (ret < 0)
         return -1;
-    ret = unlink(global_tsc_path);
+    ret = remove(global_tsc_path);
     if (ret < 0) {
         perror("Failed to unlink global tsc clock file");
-        return ret;
+        return errno;
     }
     return 0;
 }
 
-static int
-clean_tsc_sem()
-{
-    if (tsc_clock.tsc_sem == NULL)
-        return 0;
-    int ret = sem_close(tsc_clock.tsc_sem);
-    if (ret != 0) {
-        perror("Failed to close tsc sem");
-        return ret;
-    }
-    ret = sem_unlink(tsc_sem_name);
-    if (ret != 0) {
-        perror("Failed to unlink tsc sem");
-        return ret;
-    }
-    return 0;
-}
-
-#ifdef LINK_INIT
-destructor
-#endif // LINK_INIT
 int
 destroy_tsc_env()
 {
-    int ret;
-    ret = clean_global_tsc();
-    ret |= clean_tsc_sem();
+    int ret = 0;
+    if (tsc_proc == kTSC_PRIMARY)
+        ret = clean_global_tsc();
     return ret;
 }
 
@@ -319,9 +266,8 @@ calibrate()
 {
     if (global_tsc_clock != NULL) {
         // try to lock spinlock
-        if (rte_spinlock_trylock(&global_tsc_clock->spin_lock) != 1) {
+        if (rte_spinlock_trylock(&global_tsc_clock->spin_lock) != 1)
             rte_spinlock_lock(&global_tsc_clock->spin_lock);
-        }
         else {
             int64_t tsc = rdtsc_();
             if (tsc > global_tsc_clock->next_calibrate_tsc) {
