@@ -15,8 +15,8 @@ struct tsc_clock_t tsc_clock aligned_cache = {
     .base_tsc = 0,
     .base_ns = 0,
     .next_calibrate_tsc = 0,
-    .base_ns_err = 0,
     .calibrate_interval_ns = CALIBRATE_INTERVAL_NS,
+    .base_ns_err = 0,
 };
 
 static void 
