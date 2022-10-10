@@ -4,7 +4,7 @@ project(tsctest)
 add_definitions("-O0 -g -march=native")
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../src)
-link_directories(${CMAKE_CURRENT_LIST_DIR}/../src/build)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../output/lib)
 
 add_executable(latency_test ${CMAKE_CURRENT_SOURCE_DIR}/test_latency.cc)
 target_link_libraries(latency_test tscns pthread)

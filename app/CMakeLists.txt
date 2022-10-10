@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.10)
+project(tsc_tool)
+add_executable(tsc_tool tsc_tool.cc)
+target_include_directories(tsc_tool PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src)
+target_link_directories(tsc_tool PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../output/lib)
+target_link_libraries(tsc_tool PRIVATE tscns)
