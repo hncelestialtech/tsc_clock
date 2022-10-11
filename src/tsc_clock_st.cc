@@ -19,6 +19,16 @@ struct tsc_clock_t tsc_clock aligned_cache = {
     .base_ns_err = 0,
 };
 
+tsc_proc_t tsc_proc = kTSC_PRIMARY;
+
+int
+init_tsc_env(tsc_proc_t proc_role=kTSC_SECONDARY)
+{}
+
+int 
+destroy_tsc_env()
+{}
+
 static void 
 sync_time(int64_t* tsc_out, int64_t* ns_out) 
 {
