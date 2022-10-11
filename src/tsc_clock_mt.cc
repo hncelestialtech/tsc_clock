@@ -58,8 +58,7 @@ static int
 get_global_tsc_config_path(char* __restrict__ buf, size_t buflen, const char* tsc_config_dir) 
 {
     int size = snprintf(buf, buflen, TSC_FILE_FMT, default_config_dir, global_tsc);
-    if (size < 0)
-    {
+    if (size < 0) {
         fprintf(stderr, "Failed to get tsc config file path\n");
         return size;
     }

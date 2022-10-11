@@ -102,7 +102,9 @@ inline void calibrate_check(int64_t now_tsc) {
 inline int64_t rdtsc()
 {
     int64_t tsc = rdtsc_();
+#ifdef SYNC_CALIBRATE
     calibrate_check(tsc);
+#endif // SYNC_CALIBRATE
     return tsc;
 }
 

@@ -16,6 +16,10 @@ if (${LINK_INIT})
      add_compile_definitions(LINK_INIT)
 endif ()
 
+if (${SYNC_CALIBRATE})
+     add_compile_definitions(SYNC_CALIBRATE)
+endif()
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
     message(STATUS "No CMAKE_BUILD_TYPE selected, config default value to ${CMAKE_BUILD_TYPE}")
