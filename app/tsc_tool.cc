@@ -11,6 +11,7 @@ const char
 tsc_short_options[] = 
     "i" /* init tsc environment */
     "c" /* clean up tsc environment */
+    "d" /* Calibrate tsc clock periodcally */
     ;
 
 enum {
@@ -38,7 +39,7 @@ tsc_usage()
     printf("tsc options:\n"
         "   -i|--init       Init tsc environment\n"
         "   -c|--clean      Clean tsc environment\n"
-        "   -d|--daemon     Calibrate tsc clock periodcally");
+        "   -d|--daemon     Calibrate tsc clock periodcally\n");
 }
 
 void
@@ -49,7 +50,7 @@ init_tsc_daemon()
         fprintf(stderr, "Failed to attach tsc environment, exit\n");
         return;
     }
-
+    tsc_proc = kTSC_PRIMARY;
     std::thread tsc_daemon = std::thread([&](){
         constexpr int ns2us = 1000;
         while(true) {
@@ -57,7 +58,10 @@ init_tsc_daemon()
             auto next_calibrate = tsc2ns(tsc_clock.next_calibrate_tsc);
             auto usleep_interval = (next_calibrate - now) / ns2us;
             
-            usleep(usleep_interval);
+            if (usleep_interval >= 0)
+            {
+                usleep(usleep_interval);
+            }
 
             auto tsc = rdtsc_();
             calibrate_check(tsc);
@@ -71,7 +75,6 @@ int main(int argc, char** argv)
 {
     int opt, ret;
     int option_index;
-    tsc_proc = kTSC_PRIMARY;
     while ((opt = getopt_long(argc, argv, tsc_short_options, 
         tsc_long_options, &option_index)) != EOF) {
         if (opt == '?') {
@@ -81,9 +84,11 @@ int main(int argc, char** argv)
         }
         switch(opt) {
         case 'i':
+            tsc_proc = kTSC_PRIMARY;
             init_tsc_env(kTSC_PRIMARY);
             break;
         case 'c':
+            tsc_proc = kTSC_PRIMARY;
             destroy_tsc_env();
             break;
         case 'd':

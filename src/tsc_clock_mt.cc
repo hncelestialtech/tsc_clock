@@ -269,10 +269,21 @@ calibrate()
             rte_spinlock_lock(&global_tsc_clock->spin_lock);
         else {
             int64_t tsc = rdtsc_();
-            if (tsc > global_tsc_clock->next_calibrate_tsc) {
+            if (tsc > global_tsc_clock->next_calibrate_tsc && tsc_proc == kTSC_PRIMARY) {
+#ifdef DEBUG_PRINT
+    fprintf(stdout, "calibrate before nase tsc %ld base ns %ld\n", global_tsc_clock->base_tsc, global_tsc_clock->base_ns);
+#endif // DEBUG_PRINT
                 do_calibrate();
+#ifdef DEBUG_PRINT
+    fprintf(stdout, "calibrate before nase tsc %ld base ns %ld\n", global_tsc_clock->base_tsc, global_tsc_clock->base_ns);
+#endif // DEBUG_PRINT
             }
         }
+#ifdef DEBUG_PRINT
+        if (tsc_proc == kTSC_SECONDARY) {
+            fprintf(stdout, "update local tsc\n");
+        }
+#endif // DEBUG_PRINT
         init_local_tsc_clock(global_tsc_clock, &tsc_clock);
         rte_spinlock_unlock(&global_tsc_clock->spin_lock);
     }

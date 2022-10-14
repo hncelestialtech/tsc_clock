@@ -15,6 +15,7 @@ void test_rdns()
 
 int main()
 {
+    init_tsc_env();
     test_rdns();
     return 0;
 }
