@@ -31,6 +31,7 @@ void test_latency()
 
 int main()
 {
+    init_tsc_env();
     test_latency();
     return 0;
 }

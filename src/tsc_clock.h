@@ -24,11 +24,12 @@ struct tsc_clock_t {
 #endif // TSC_GLOBAL
 };
 
-#ifdef TSC_GLOBAL
 enum tsc_proc_t {
     kTSC_PRIMARY = 0,
     kTSC_SECONDARY
 };
+
+extern tsc_proc_t tsc_proc;
 
 /**
  * @brief Initialize tsc environment
@@ -53,7 +54,6 @@ int init_tsc_env(tsc_proc_t proc_role=kTSC_SECONDARY);
  *  - On failure, returns errno.
  */
 int destroy_tsc_env();
-#endif // TSC_GLOBAL
 
 /**
  * @brief Gets the value of the tsc register without calibration

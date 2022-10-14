@@ -4,11 +4,8 @@
 
 
 int main(int argc, char** argv) {
-      printf("%ld\n", rdsysns());
-      printf("%ld\n", rdns());
-      while(true)
-      {
-            printf("%ld\n", rdns());
-      }
+      init_tsc_env();
+      auto t1 = rdsysns();
+      auto t2 = rdns();
       return 0;
 }
