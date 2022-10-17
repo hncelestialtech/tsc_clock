@@ -22,7 +22,7 @@ struct tsc_clock_t tsc_clock aligned_cache = {
 tsc_proc_t tsc_proc = kTSC_PRIMARY;
 
 int
-init_tsc_env(tsc_proc_t proc_role=kTSC_SECONDARY)
+init_tsc_env(tsc_proc_t proc_role)
 {}
 
 int 
