@@ -6,26 +6,26 @@
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-#ifndef always_inline
-#define always_inline __attribute__((always_inline))
-#endif // always_inline
-#ifndef noinlnie
-#define noinline __attribute__((noinlnie))
-#endif // noinline
+#ifndef tsc_always_inline
+#define tsc_always_inline __attribute__((always_inline))
+#endif // tsc_always_inline
+#ifndef tsc_noinline
+#define tsc_noinline __attribute__((noinline))
+#endif // tsc_noinline
 
-#ifndef cold
-#define cold __attribute__((cold))
-#endif // cold
-#ifndef hot
-#define hot __attribute__((hot))
-#endif // hot
+#ifndef tsc_cold
+#define tsc_cold __attribute__((cold))
+#endif // tsc_cold
+#ifndef tsc_hot
+#define tsc_hot __attribute__((hot))
+#endif // tsc_hot
 
-#ifndef constructor
-#define constructor __attribute((constructor))
-#endif // constructor
-#ifndef destructor
-#define destructor __attribute__((destructor))
-#endif // destructor
+#ifndef tsc_constructor
+#define tsc_constructor __attribute((constructor))
+#endif // tsc_constructor
+#ifndef tsc_destructor
+#define tsc_destructor __attribute__((destructor))
+#endif // tsc_destructor
 
 #define aligned_cache __attribute__((aligned(128)))
 

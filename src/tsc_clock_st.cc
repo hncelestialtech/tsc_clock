@@ -23,11 +23,11 @@ tsc_proc_t tsc_proc = kTSC_PRIMARY;
 
 int
 init_tsc_env(tsc_proc_t proc_role)
-{}
+{   return 0;   }
 
 int 
 destroy_tsc_env()
-{}
+{   return 0;   }
 
 static void 
 sync_time(int64_t* tsc_out, int64_t* ns_out) 
@@ -75,7 +75,7 @@ calibrate() {
 }
 
 #ifdef LINK_INIT
-constructor
+tsc_constructor
 #endif // LINK_INT
 void 
 init_clock()
