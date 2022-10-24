@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <thread>
 
@@ -73,6 +74,11 @@ init_tsc_daemon()
 
 int main(int argc, char** argv)
 {
+    if (argc < 2) {
+        fprintf(stderr, "Format error\n");
+        tsc_usage();
+        exit(-1);
+    }
     int opt, ret;
     int option_index;
     while ((opt = getopt_long(argc, argv, tsc_short_options, 

@@ -269,7 +269,11 @@ calibrate()
             rte_spinlock_lock(&global_tsc_clock->spin_lock);
         else {
             int64_t tsc = rdtsc_();
+#ifndef SYNC_CALIBRATE
             if (tsc > global_tsc_clock->next_calibrate_tsc && tsc_proc == kTSC_PRIMARY) {
+#else
+            if (tsc > global_tsc_clock->next_calibrate_tsc) {
+#endif // SYNC_CALIBRATE
 #ifdef DEBUG_PRINT
     fprintf(stdout, "calibrate before nase tsc %ld base ns %ld\n", global_tsc_clock->base_tsc, global_tsc_clock->base_ns);
 #endif // DEBUG_PRINT

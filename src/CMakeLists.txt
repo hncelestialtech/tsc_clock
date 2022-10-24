@@ -25,7 +25,7 @@ if (${DEBUG_PRINT})
 endif ()
 
 if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
+    set(CMAKE_BUILD_TYPE "Release")
     message(STATUS "No CMAKE_BUILD_TYPE selected, config default value to ${CMAKE_BUILD_TYPE}")
 endif ()
 
