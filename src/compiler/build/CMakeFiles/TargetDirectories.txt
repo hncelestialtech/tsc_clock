@@ -1,0 +1,3 @@
+/home/xhliu/work/tsc_clock/src/compiler/build/CMakeFiles/tsc_compile.dir
+/home/xhliu/work/tsc_clock/src/compiler/build/CMakeFiles/edit_cache.dir
+/home/xhliu/work/tsc_clock/src/compiler/build/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,1 @@
+/usr/local/bin/gcc CMakeFiles/tsc_compile.dir/cpuflags.c.o CMakeFiles/tsc_compile.dir/main.c.o -o tsc_compile 
