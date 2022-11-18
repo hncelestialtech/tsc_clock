@@ -6,11 +6,15 @@
 extern "C" {
 #endif
 
-static inline uint64_t
-rdtsc()
+#define _tsc_gettime()  rdtsc_gettime()
+#define _tsc_clock_init()   rdtsc_clocksource_attach()
+#define _tsc_clock_destroy()    rdtsc_clocksource_deattach()
+
+static inline int64_t
+rdtsc(void)
 {
     union {
-        uint64_t tsc_64;
+        int64_t tsc_64;
         __extension__
         struct {
             uint32_t lo_32;
@@ -38,18 +42,27 @@ rdtsc()
 
 /**
  * @brief 
- * 
- * @return int 
+ *      Initialize the TSC clock source environment
+ * @return int
+ *      --0 Success
+ *      --errno On error, the return value is set as errno to indicate
+ *              the cause of the error
  */
-int _tsc_clock_init();
+int rdtsc_clocksource_attach(void);
 
 /**
  * @brief 
- * 
- * @return uint64_t 
+ *      Obtain nanosecond-precision timestamps from the TSC clock source
+ * @return int64_t
+ *      timestamp 
  */
-uint64_t _tsc_gettime();
+int64_t rdtsc_gettime(void);
 
+/**
+ * @brief 
+ *      destroy tsc environment
+ */
+void rdtsc_clocksource_deattach(void);
 
 #ifdef __cplusplus
 }

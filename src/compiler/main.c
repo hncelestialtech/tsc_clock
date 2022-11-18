@@ -138,6 +138,10 @@ static void
 generate_common_config(int fd)
 {
     dprintf(fd, "#define TSC_CLOCK_PATH \"/var/run/.tsc_clocksource\"\n");
+    dprintf(fd, "#define TSC_MAGIC  0x19980708\n");
+    dprintf(fd, "#define CALIBRATE_SAMPLE   128\n");
+    dprintf(fd, "#define SAMPLEDURATION 16 * 1000000\n");
+    dprintf(fd, "#define GET_CLOSEST_TSC_RETRIES   256\n");
 }
 
 static int
@@ -203,7 +207,7 @@ int main(int argc, char** argv)
     snprintf(config_header_path, 100, DEFAULT_CONFIG_PATH, default_config.dir);
     int config_fd = open(config_header_path, O_CREAT|O_RDWR, 0666);
     if (config_fd < 0) {
-        fprintf(stderr, "Failed to open config path: \n", strerror(errno));
+        fprintf(stderr, "Failed to open config path %s: %s\n", config_header_path, strerror(errno));
         exit(-1);
     }
     generate_header_guard(1, config_fd);
