@@ -16,6 +16,10 @@
 #include "rdtsc_datastruct.h"
 #include "tsc_atomic.h"
 
+#ifdef USDT
+#include <sys/sdt.h>
+#endif // USDT
+
 static struct tsc_clocksource * tsc_clocksource;
 
 static int
@@ -203,6 +207,10 @@ rdtsc_clocksource_calibrate(void)
     fprintf(stdout, "update coef %lf, offset %lf\n", tmp._.__.coef, tmp._.__.offset);
 
     atomic_store128((uint128_atomic_t*)tsc_clocksource, *(uint128_atomic_t*)&tmp);
+
+#ifdef USDT
+    DTRACE_PROBE2(trace_clocksource, trace_global, tsc_clocksource->_.__.coef, tsc_clocksource->_.__.offset);
+#endif // USDT
 
     free(tscs);
     free(syss);

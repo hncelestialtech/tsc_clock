@@ -19,6 +19,10 @@
 #include <emmintrin.h>
 #endif // TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
 
+#ifdef USDT
+#include <sys/sdt.h>
+#endif // USDT
+
 
 #include "rdtsc_datastruct.h"
 #include "tsc_atomic.h"
@@ -104,6 +108,9 @@ void
 update_local_tscclocksource(void)
 {
     *(uint128_atomic_t*)&local_clocksource = atomic_load128((uint128_atomic_t*)global_clocksource);
+#ifdef USDT
+    DTRACE_PROBE2(trace_clocksource, trace_local, local_clocksource._.__.coef, local_clocksource._.__.offset);
+#endif // USDT
 }
 
 int64_t
