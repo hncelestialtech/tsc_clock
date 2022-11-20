@@ -61,6 +61,15 @@ Failed:
     return ret;
 }
 
+int
+rdtsc_clocksource_destroy(void)
+{
+    if (tsc_clocksource != NULL) {
+        munmap(tsc_clocksource, sizeof(struct tsc_clocksource));
+    }
+    return 0;
+}
+
 static int64_t 
 _rdtsc(void)
 {
@@ -143,7 +152,7 @@ get_closest_tsc_sys(int n, int64_t* tsc_time, int64_t* sys_time)
 // simpleLinearRegression without intercept:
 // α = ∑𝑥𝑖𝑦𝑖 / ∑𝑥𝑖^2.
 static void
-simple_linear_regression(double* tscs, double* syss, size_t len, double* coef, int64_t* offset)
+simple_linear_regression(double* tscs, double* syss, size_t len, double* coef, double* offset)
 {
     double tsc_mean, sys_mean, denominator, numerator;
     for (int i = 0; i < len; ++i) {
@@ -160,7 +169,7 @@ simple_linear_regression(double* tscs, double* syss, size_t len, double* coef, i
     }
 
     *coef = numerator / denominator;
-    *offset = (int64_t)(sys_mean - *coef * tsc_mean);
+    *offset = (sys_mean - *coef * tsc_mean);
 }
 
 int 
@@ -183,7 +192,7 @@ rdtsc_clocksource_calibrate(void)
         syss[i * 2 + 1] = (double)sys1;
     }
 
-    simple_linear_regression(tscs, syss, CALIBRATE_SAMPLE << 1, (double*)&tmp.coef, (int64_t*)&tmp.offset);
+    simple_linear_regression(tscs, syss, CALIBRATE_SAMPLE << 1, (double*)&tmp._.__.coef, (double*)&tmp._.__.offset);
 
     atomic_store128((uint128_atomic_t*)tsc_clocksource, *(uint128_atomic_t*)&tmp);
 

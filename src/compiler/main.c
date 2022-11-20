@@ -142,6 +142,15 @@ generate_common_config(int fd)
     dprintf(fd, "#define CALIBRATE_SAMPLE   128\n");
     dprintf(fd, "#define SAMPLEDURATION 16 * 1000000\n");
     dprintf(fd, "#define GET_CLOSEST_TSC_RETRIES   256\n");
+    if (cpu_get_flag_enabled(CPUFLAG_AVX512F) == 1 && cpu_get_flag_enabled(CPUFLAG_FMA) == 1) {
+        dprintf(fd, "#define TSC_AVX512F\n#define TSC_FMA\n");
+    }
+    if (cpu_get_flag_enabled(CPUFLAG_SSE) == 1) {
+        dprintf(fd, "#define TSC_SSE\n");
+    }
+    if (cpu_get_flag_enabled(CPUFLAG_SSE2) == 1) {
+        dprintf(fd, "#define TSC_SSE2\n");
+    }
 }
 
 static int

@@ -13,6 +13,13 @@
 #include <sys/mman.h>
 #include <assert.h>
 
+#ifdef TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+#include <immintrin.h>
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#endif // TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+
+
 #include "rdtsc_datastruct.h"
 #include "tsc_atomic.h"
 
@@ -21,13 +28,18 @@ extern "C" {
 #endif
 
 struct local_tsc_clocksoure {
-    double  coef;
-    int64_t offset;
-} __attribute__((aligned(16)));
+    union {
+        __uint128_t align_var;
+        struct {
+            double  coef;
+            double offset;
+        }__;
+    }_;
+};
 
 static struct local_tsc_clocksoure local_clocksource = {
-    .coef = 0.0,
-    .offset = 0
+    ._.__.coef = 0.0,
+    ._.__.offset = 0.0
 };
 
 static struct tsc_clocksource * global_clocksource;
@@ -35,8 +47,8 @@ static struct tsc_clocksource * global_clocksource;
 static void
 init_local_clocksource(void)
 {
-    local_clocksource.coef = global_clocksource->coef;
-    local_clocksource.offset = global_clocksource->offset;
+    local_clocksource._.__.coef = global_clocksource->_.__.coef;
+    local_clocksource._.__.offset = global_clocksource->_.__.offset;
 }
 
 int
@@ -98,13 +110,25 @@ int64_t
 rdtsc_gettime(void)
 {
     int64_t tsc;
+    int64_t nanots;
 retry:
     // The calculation of the conversion is performed directly speculatively, 
     // and since the probability of a collision is small, it can be returned 
     // directly most of the time
+
     tsc = rdtsc();
-    // [TODO] Whether it can be done directly through FMA instructions
-    int64_t nanosec = local_clocksource.coef * tsc + local_clocksource.offset;
+
+#ifdef TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+    // gcc 9 -O3 only impl with mulsd and addsd which can be done with fmadd
+    __m128d d;
+    __m128d ftsc = _mm_cvtu64_sd(d, tsc);
+    __m128d coef = _mm_load_pd((double const*)&local_clocksource);
+    __m128d offset = (__m128d)_mm_movehl_ps((__m128)coef, (__m128)coef);
+    __m128d ts = _mm_fmadd_pd(ftsc, coef, offset);
+    nanots = _mm_cvttsd_i64(ts);
+#else
+    nanots = local_clocksource._.__.coef * tsc + local_clocksource._.__.offset;
+#endif // TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
     // Since the READMODIFY of the global TSC clock source is atomic, only the 
     // following scenarios can occur:
     // 1. rmw g -> load g.coef -> load g.offset
@@ -118,14 +142,23 @@ retry:
     // so as long as the update of the local environment and the global environment 
     // is an atomic transaction, transaction atomicity can be guaranteed
     // In the third case, you only need to update the entire local environment
-    if (__builtin_expect(!!(local_clocksource.coef != global_clocksource->coef 
-                            || local_clocksource.offset != global_clocksource->offset), 0)) {
+#ifdef TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+    __m128d g_clocksource = _mm_load_pd((double const *)global_clocksource);
+    __m128 xmm_cmp_res = _mm_xor_ps((__m128)g_clocksource, (__m128)coef);
+    uint64_t* r_cmp_res = (const uint64_t*)&xmm_cmp_res;
+    if (__builtin_expect(!!((r_cmp_res[0] != 0 ) || (r_cmp_res[1] != 0)), 0)) {
+#else
+    if (__builtin_expect(!!(local_clocksource._.__.coef != global_clocksource->_.__.coef 
+                            || local_clocksource._.__.offset != global_clocksource->_.__.offset), 0)) {
+#endif // TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
         update_local_tscclocksource();
         // The update of the global environment is much larger than the time for 
         // thread scheduling and logical calculation, so you can jump out of the
         // loop after entering the next loop without causing an infinite loop
         goto retry;
     }
+
+    return nanots;
 }
 
 #ifdef __cplusplus

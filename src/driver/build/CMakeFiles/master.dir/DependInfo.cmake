@@ -8,8 +8,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/xhliu/work/tsc_clock/src/driver/main.c" "CMakeFiles/master.dir/main.c.o" "gcc" "CMakeFiles/master.dir/main.c.o.d"
-  "/home/xhliu/work/tsc_clock/src/driver/rdtscclocksource.c" "CMakeFiles/master.dir/rdtscclocksource.c.o" "gcc" "CMakeFiles/master.dir/rdtscclocksource.c.o.d"
+  "/home/james/work/tsc_clock/src/driver/main.c" "CMakeFiles/master.dir/main.c.o" "gcc" "CMakeFiles/master.dir/main.c.o.d"
+  "/home/james/work/tsc_clock/src/driver/rdtscclocksource.c" "CMakeFiles/master.dir/rdtscclocksource.c.o" "gcc" "CMakeFiles/master.dir/rdtscclocksource.c.o.d"
   )
 
 # Targets to which this target links.

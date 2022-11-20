@@ -4,8 +4,13 @@
 #include <stdint.h>
 
 struct tsc_clocksource {
-    volatile double     coef;
-    volatile int64_t    offset;
+    union {
+        __uint128_t align_var;
+        struct {
+            volatile double     coef;
+            volatile double    offset;
+        }__;
+    }_;
     uint64_t            magic;
 } __attribute__((aligned(64)));
 

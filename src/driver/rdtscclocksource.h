@@ -19,4 +19,13 @@ int rdtsc_clocksource_create(void);
  */
 int rdtsc_clocksource_calibrate(void);
 
+/**
+ * @brief
+ *      destroy TSC clock source environment
+ * @return int
+ *      0 --Success
+ *      -1 --Failed
+*/
+int rdtsc_clocksource_destroy(void);
+
 #endif // TSCCLOCKSOURCE_INCLUDE_H

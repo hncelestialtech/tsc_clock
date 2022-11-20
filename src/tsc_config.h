@@ -6,4 +6,7 @@
 #define SAMPLEDURATION 16 * 1000
 #define GET_CLOSEST_TSC_RETRIES   256
 #define TSC_CLOCKSOURCE
+// #define TSC_AVX512F
+// #define TSC_FMA
+// #define TSC_SSE
 #endif // TSC_CONFIG_H
