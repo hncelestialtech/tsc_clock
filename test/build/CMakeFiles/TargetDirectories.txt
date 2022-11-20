@@ -1,0 +1,3 @@
+/home/james/work/tsc_clock/test/build/CMakeFiles/rebuild_cache.dir
+/home/james/work/tsc_clock/test/build/CMakeFiles/edit_cache.dir
+/home/james/work/tsc_clock/test/build/CMakeFiles/test_nanoclock.dir

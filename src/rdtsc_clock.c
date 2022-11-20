@@ -118,7 +118,7 @@ retry:
 
     tsc = rdtsc();
 
-#ifdef TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+#if TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
     // gcc 9 -O3 only impl with mulsd and addsd which can be done with fmadd
     __m128d d;
     __m128d ftsc = _mm_cvtu64_sd(d, tsc);
@@ -142,10 +142,10 @@ retry:
     // so as long as the update of the local environment and the global environment 
     // is an atomic transaction, transaction atomicity can be guaranteed
     // In the third case, you only need to update the entire local environment
-#ifdef TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+#if TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
     __m128d g_clocksource = _mm_load_pd((double const *)global_clocksource);
     __m128 xmm_cmp_res = _mm_xor_ps((__m128)g_clocksource, (__m128)coef);
-    uint64_t* r_cmp_res = (const uint64_t*)&xmm_cmp_res;
+    const uint64_t* r_cmp_res = (const uint64_t*)&xmm_cmp_res;
     if (__builtin_expect(!!((r_cmp_res[0] != 0 ) || (r_cmp_res[1] != 0)), 0)) {
 #else
     if (__builtin_expect(!!(local_clocksource._.__.coef != global_clocksource->_.__.coef 

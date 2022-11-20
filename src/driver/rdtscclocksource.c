@@ -29,14 +29,16 @@ rdtsc_clocksource_create(void)
 {
     int ret;
     const char* tsc_config_path = TSC_CLOCK_PATH;
-    int config_fd = open(tsc_config_path, O_RDWR, 0666);
+    int config_fd = open(tsc_config_path, O_RDWR|O_CREAT, 0666);
     if (config_fd < 0) {
         fprintf(stderr, "Failed to open %s: %s\n", tsc_config_path, strerror(errno));
         return errno;
     }
+    ftruncate(config_fd, sizeof(struct tsc_clocksource));
     // The memory allocated by mmap is aligned by page size by default to 4KB, 
     // so you can get a 64-byte aligned address without memory alignment
     tsc_clocksource = mmap(NULL, sizeof(struct tsc_clocksource), PROT_READ | PROT_WRITE, MAP_SHARED, config_fd, 0);
+    memset(tsc_clocksource, 0, sizeof(struct tsc_clocksource));
     if (tsc_clocksource == MAP_FAILED) {
         tsc_clocksource = NULL;
         fprintf(stderr, "Failed to get global clocksource: %s\n", strerror(errno));
@@ -48,6 +50,9 @@ rdtsc_clocksource_create(void)
         goto Failed;
     }
 
+    __asm __volatile ("lock; orl $0, (%%rsp)" ::: "memory");
+    tsc_clocksource->magic = TSC_MAGIC;
+    __asm __volatile ("lock; orl $0, (%%rsp)" ::: "memory");
     close(config_fd);
     return 0;
 Failed:
@@ -64,6 +69,7 @@ Failed:
 int
 rdtsc_clocksource_destroy(void)
 {
+    tsc_clocksource->magic = 0;
     if (tsc_clocksource != NULL) {
         munmap(tsc_clocksource, sizeof(struct tsc_clocksource));
     }
@@ -193,6 +199,8 @@ rdtsc_clocksource_calibrate(void)
     }
 
     simple_linear_regression(tscs, syss, CALIBRATE_SAMPLE << 1, (double*)&tmp._.__.coef, (double*)&tmp._.__.offset);
+
+    fprintf(stdout, "update coef %lf, offset %lf\n", tmp._.__.coef, tmp._.__.offset);
 
     atomic_store128((uint128_atomic_t*)tsc_clocksource, *(uint128_atomic_t*)&tmp);
 

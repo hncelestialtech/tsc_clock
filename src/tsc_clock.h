@@ -22,7 +22,7 @@
 #define _nano_clock_destroy()   do {} while(0)
 #endif // TSC_CLOCKSOURCE
 
-#ifndef TSC_CLOCKSOURCE
+#ifdef TSC_CLOCKSOURCE
 #include "rdtsc_clock.h"
 #endif // TSC_CLOCKSOURCE
 

@@ -1,16 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(tsctest)
-
-add_definitions("-O0 -g -march=native")
-
-include_directories(${CMAKE_CURRENT_LIST_DIR}/../src)
-link_directories(${CMAKE_CURRENT_LIST_DIR}/../output/lib)
-
-add_executable(latency_test ${CMAKE_CURRENT_SOURCE_DIR}/test_latency.cc)
-target_link_libraries(latency_test tscns pthread)
-
-add_executable(st_test ${CMAKE_CURRENT_SOURCE_DIR}/test_tsc_st.cc)
-target_link_libraries(st_test tscns pthread)
-
-add_executable(mp_test ${CMAKE_CURRENT_SOURCE_DIR}/test_tsc_mp.cc)
-target_link_libraries(mp_test tscns pthread)
+add_compile_options(-g)
+add_executable(test_nanoclock test_nanoclock.cc)
+target_include_directories(test_nanoclock PRIVATE /home/james/work/tsc_clock/src)
+target_link_directories(test_nanoclock PRIVATE /home/james/work/tsc_clock/src/build)
+target_link_libraries(test_nanoclock PRIVATE tscclocksource)

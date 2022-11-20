@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/test_nanoclock.dir/test_nanoclock.cc.o -o test_nanoclock   -L/home/james/work/tsc_clock/src/build  -Wl,-rpath,/home/james/work/tsc_clock/src/build -ltscclocksource 
