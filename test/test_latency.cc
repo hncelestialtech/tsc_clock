@@ -1,37 +1,23 @@
-#include "tsc_clock.h"
 #include <iostream>
-#include <iomanip>
-using namespace std;
+#include <time.h>
 
-void test_latency()
+#include "tsc_clock.h"
+
+static void
+test_latency()
 {
-    double rdns_latency;
-    const int N = 1000;
-    int64_t tmp = 0;
-    int64_t t0 = rdsysns();
-    for (int i = 0; i < N; i++) {
-      tmp += rdsysns();
-    }
-    int64_t t1 = rdsysns();
-    for (int i = 0; i < N; i++) {
-      tmp += rdtsc_();
-    }
-    int64_t t2 = rdsysns();
-    for (int i = 0; i < N; i++) {
-      tmp += rdns();
-    }
-    int64_t t3 = rdsysns();
-    // rdsys_latency is actually a low bound here as it's measured in a busy loop
-    double rdsys_latency = (double)(t1 - t0) / (N + 1);
-    double rdtsc_latency = (double)(t2 - t1 - rdsys_latency) / N;
-    rdns_latency = (double)(t3 - t2 - rdsys_latency) / N;
-    cout << "rdsys_latency: " << rdsys_latency << ", rdtsc_latency: " << rdtsc_latency
-         << ", rdns_latency: " << rdns_latency << ", tmp: " << tmp << endl;
+  int loop_count = 10000;
+  struct timespec begin{}, end{};
+  clock_gettime(CLOCK_REALTIME, &begin);
+  for (int i = 0; i < loop_count; ++i) {
+    int64_t ts = nano_gettime();
+  }
+  clock_gettime(CLOCK_REALTIME, &end);
+  int64_t duration = end.tv_sec * 1000000 + end.tv_nsec - (begin.tv_sec * 1000000 - end.tv_nsec);
+  std::cout<<"duration "<<duration / loop_count<<std::endl;
 }
 
 int main()
 {
-    init_tsc_env();
-    test_latency();
-    return 0;
+  test_latency();
 }
