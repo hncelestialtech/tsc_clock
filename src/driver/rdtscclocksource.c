@@ -42,14 +42,14 @@ rdtsc_clocksource_create(void)
     // The memory allocated by mmap is aligned by page size by default to 4KB, 
     // so you can get a 64-byte aligned address without memory alignment
     tsc_clocksource = mmap(NULL, sizeof(struct tsc_clocksource), PROT_READ | PROT_WRITE, MAP_SHARED, config_fd, 0);
-    memset(tsc_clocksource, 0, sizeof(struct tsc_clocksource));
+    
     if (tsc_clocksource == MAP_FAILED) {
         tsc_clocksource = NULL;
         fprintf(stderr, "Failed to get global clocksource: %s\n", strerror(errno));
         ret = errno;
         goto Failed;
     }
-
+    memset(tsc_clocksource, 0, sizeof(struct tsc_clocksource));
     if (rdtsc_clocksource_init() != 0) {
         goto Failed;
     }
@@ -95,6 +95,7 @@ _rdtsc(void)
     asm volatile("rdtsc" :
 		     "=a" (tsc.lo_32),
 		     "=d" (tsc.hi_32));
+    return tsc.tsc_64;
 }
 
 /**

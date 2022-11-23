@@ -41,7 +41,7 @@ struct local_tsc_clocksoure {
     }_;
 };
 
-static struct local_tsc_clocksoure local_clocksource = {
+static __thread struct local_tsc_clocksoure local_clocksource = {
     ._.__.coef = 0.0,
     ._.__.offset = 0.0
 };
