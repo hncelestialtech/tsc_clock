@@ -6,5 +6,5 @@ C_DEFINES =
 
 C_INCLUDES = -I/home/james/work/tsc_clock/src/driver/..
 
-C_FLAGS = -g
+C_FLAGS = -g -O0
 
