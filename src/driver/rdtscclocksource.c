@@ -54,9 +54,9 @@ rdtsc_clocksource_create(void)
         goto Failed;
     }
 
-    __asm __volatile ("lock; orl $0, (%%rsp)" ::: "memory");
+    tsc_full_barrier();
     tsc_clocksource->magic = TSC_MAGIC;
-    __asm __volatile ("lock; orl $0, (%%rsp)" ::: "memory");
+    tsc_full_barrier();
     close(config_fd);
     return 0;
 Failed:
@@ -182,12 +182,30 @@ simple_linear_regression(double* tscs, double* syss, size_t len, double* coef, d
     *offset = (sys_mean - *coef * tsc_mean);
 }
 
+static inline void
+adjust_coef(struct tsc_clocksource* clocksource, int64_t base_tsc, double coef, double offset)
+{
+    if (__builtin_expect(!!(clocksource->base_tsc != 0), 1)) {
+        int64_t ns_now = clocksource->_.__.coef * base_tsc + clocksource->_.__.offset;
+        int64_t next_calibrate_ns = ns_now + clocksource->calibrate_interval;
+        int64_t next_calibrate_tsc = (next_calibrate_ns - clocksource->_.__.offset) / coef;
+        double coef = clocksource->calibrate_interval / (next_calibrate_tsc - clocksource->base_tsc);
+        offset = next_calibrate_ns - next_calibrate_tsc * coef;
+    }
+    clocksource->base_tsc = base_tsc;
+    clocksource->_.__.coef = coef;
+    clocksource->_.__.offset = offset;
+}
+
 int 
 rdtsc_clocksource_calibrate(void)
 {
     struct tsc_clocksource tmp;
     double* tscs = malloc(sizeof(double) * CALIBRATE_SAMPLE * 2);
     double* syss = malloc(sizeof(double) * CALIBRATE_SAMPLE * 2);
+    double coef;
+    double offset;
+    int64_t tsc_now = rdtsc();
 
     for (int i = 0; i < CALIBRATE_SAMPLE; ++i) {
         int64_t tsc0, sys0, tsc1, sys1;
@@ -202,7 +220,9 @@ rdtsc_clocksource_calibrate(void)
         syss[i * 2 + 1] = (double)sys1;
     }
 
-    simple_linear_regression(tscs, syss, CALIBRATE_SAMPLE << 1, (double*)&tmp._.__.coef, (double*)&tmp._.__.offset);
+    simple_linear_regression(tscs, syss, CALIBRATE_SAMPLE << 1, &coef, &offset);
+
+    adjust_coef(tsc_clocksource, tsc_now, coef, offset);
 
     fprintf(stdout, "update coef %lf, offset %lf\n", tmp._.__.coef, tmp._.__.offset);
 

@@ -103,7 +103,7 @@ rdtsc_clocksource_deattach(void)
     }
 }
 
-__attribute__((cold, noinline))
+__attribute__((noinline))
 void
 update_local_tscclocksource(void)
 {

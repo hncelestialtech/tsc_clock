@@ -2,6 +2,7 @@
 #define RDTSC_DATASTRUCT_H
 
 #include <stdint.h>
+#include "tsc_atomic.h"
 
 struct tsc_clocksource {
     union {
@@ -11,6 +12,9 @@ struct tsc_clocksource {
             volatile double    offset;
         }__;
     }_;
+    char pad[TSC_SMP_ALIGN - sizeof(tsc_clocksource._)];
+    int64_t             base_tsc;
+    int64_t             calibrate_interval;
     uint64_t            magic;
 } __attribute__((aligned(64)));
 

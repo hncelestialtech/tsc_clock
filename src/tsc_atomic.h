@@ -2,7 +2,10 @@
 #define TSC_ATOMIC_H
 #include <stdint.h>
 
+#define TSC_CACHELINE 64
+#define TSC_SMP_ALIGN (TSC_CACHELINE << 1)
 #define tsc_lfence() asm volatile("lfence":::"memory")
+#define tsc_full_barrier()  __asm __volatile ("lock; orl $0, (%%rsp)" ::: "memory")
 
 struct _uint128_atomic_t {
     volatile uint64_t low;
