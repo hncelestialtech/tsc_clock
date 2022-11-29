@@ -28,6 +28,12 @@ rdtsc_clocksource_init(void)
     return rdtsc_clocksource_calibrate();
 }
 
+int64_t
+get_calibrate_interval(void)
+{
+    return tsc_clocksource == NULL? 0: tsc_clocksource->calibrate_interval;
+}
+
 int
 rdtsc_clocksource_create(void)
 {
@@ -54,9 +60,9 @@ rdtsc_clocksource_create(void)
         goto Failed;
     }
 
-    tsc_full_barrier();
+    asm volatile("":::"memory");
     tsc_clocksource->magic = TSC_MAGIC;
-    tsc_full_barrier();
+    __asm __volatile ("lock; orl $0, (%%rsp)" ::: "memory");
     close(config_fd);
     return 0;
 Failed:
@@ -187,15 +193,15 @@ static inline void
 adjust_coef(struct tsc_clocksource* clocksource, int64_t base_tsc, double coef, double offset)
 {
     if (__builtin_expect(!!(clocksource->base_tsc != 0), 1)) {
-        int64_t ns_now = clocksource->_.__.coef * base_tsc + clocksource->_.__.offset;
+        int64_t ns_now = clocksource->coef * base_tsc + clocksource->offset;
         int64_t next_calibrate_ns = ns_now + clocksource->calibrate_interval;
-        int64_t next_calibrate_tsc = (next_calibrate_ns - clocksource->_.__.offset) / coef;
+        int64_t next_calibrate_tsc = (next_calibrate_ns - clocksource->offset) / coef;
         double coef = clocksource->calibrate_interval / (next_calibrate_tsc - clocksource->base_tsc);
         offset = next_calibrate_ns - next_calibrate_tsc * coef;
     }
     clocksource->base_tsc = base_tsc;
-    clocksource->_.__.coef = coef;
-    clocksource->_.__.offset = offset;
+    clocksource->coef = coef;
+    clocksource->offset = offset;
 }
 
 int 
@@ -225,9 +231,13 @@ rdtsc_clocksource_calibrate(void)
 
     adjust_coef(tsc_clocksource, tsc_now, coef, offset);
 
-    fprintf(stdout, "update coef %lf, offset %lf\n", tmp._.__.coef, tmp._.__.offset);
+    asm volatile ("":::"memory");
 
-    atomic_store128((uint128_atomic_t*)tsc_clocksource, *(uint128_atomic_t*)&tmp);
+    tsc_clocksource++;
+
+    asm volatile ("lock; orl $0, (%%rsp)" ::: "memory");
+
+    fprintf(stdout, "update coef %lf, offset %lf\n", tsc_clocksource->coef, tsc_clocksource->offset);
 
 #ifdef USDT
     DTRACE_PROBE2(trace_clocksource, trace_global, tsc_clocksource->_.__.coef, tsc_clocksource->_.__.offset);

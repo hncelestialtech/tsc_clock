@@ -33,17 +33,20 @@ extern "C" {
 
 struct local_tsc_clocksoure {
     union {
-        __uint128_t align_var;
+        __uint128_t _;
+        __extension__
         struct {
             double  coef;
             double offset;
-        }__;
-    }_;
-};
+        };
+    };
+    int64_t seq;
+} __attribute__((aligned(64)));
 
 static __thread struct local_tsc_clocksoure local_clocksource = {
-    ._.__.coef = 0.0,
-    ._.__.offset = 0.0
+    .coef = 0.0,
+    .offset = 0.0,
+    .seq = 0
 };
 
 static struct tsc_clocksource * global_clocksource;
@@ -51,8 +54,8 @@ static struct tsc_clocksource * global_clocksource;
 static void
 init_local_clocksource(void)
 {
-    local_clocksource._.__.coef = global_clocksource->_.__.coef;
-    local_clocksource._.__.offset = global_clocksource->_.__.offset;
+    local_clocksource.coef = global_clocksource->coef;
+    local_clocksource.offset = global_clocksource->offset;
 }
 
 int
@@ -107,7 +110,15 @@ __attribute__((noinline))
 void
 update_local_tscclocksource(void)
 {
-    *(uint128_atomic_t*)&local_clocksource = atomic_load128((uint128_atomic_t*)global_clocksource);
+#if TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+    __m128i tmp = _mm_load_epi32(global_clocksource->_);
+    _mm_storeu_epi16(&local_clocksource._, tmp);
+#else
+    local_clocksource.coef = global_clocksource->coef;
+    local_clocksource.offset = global_clocksource->offset;
+#endif
+    asm volatile("":::"memory");
+    local_clocksource.seq = global_clocksource->seq;
 #ifdef USDT
     DTRACE_PROBE2(trace_clocksource, trace_local, local_clocksource._.__.coef, local_clocksource._.__.offset);
 #endif // USDT
@@ -134,30 +145,9 @@ retry:
     __m128d ts = _mm_fmadd_pd(ftsc, coef, offset);
     nanots = _mm_cvttsd_i64(ts);
 #else
-    nanots = local_clocksource._.__.coef * tsc + local_clocksource._.__.offset;
+    nanots = local_clocksource.coef * tsc + local_clocksource.offset;
 #endif // TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
-    // Since the READMODIFY of the global TSC clock source is atomic, only the 
-    // following scenarios can occur:
-    // 1. rmw g -> load g.coef -> load g.offset
-    // 2. load g.coef -> rmw g -> load g.offset
-    // 3. load g.coef -> load g.offset ->rmw g
-    // In the first case, the local environment does not need to be updated, 
-    // and the variables required to obtain timestamps do not have transaction 
-    // atomicity problems
-    // In the second case, the local environment needs to be updated, because 
-    // the calculation factor of the timestamp comes from the local environment,
-    // so as long as the update of the local environment and the global environment 
-    // is an atomic transaction, transaction atomicity can be guaranteed
-    // In the third case, you only need to update the entire local environment
-#if TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
-    __m128d g_clocksource = _mm_load_pd((double const *)global_clocksource);
-    __m128 xmm_cmp_res = _mm_xor_ps((__m128)g_clocksource, (__m128)coef);
-    const uint64_t* r_cmp_res = (const uint64_t*)&xmm_cmp_res;
-    if (__builtin_expect(!!((r_cmp_res[0] != 0 ) || (r_cmp_res[1] != 0)), 0)) {
-#else
-    if (__builtin_expect(!!(local_clocksource._.__.coef != global_clocksource->_.__.coef 
-                            || local_clocksource._.__.offset != global_clocksource->_.__.offset), 0)) {
-#endif // TSC_FMA && TSC_AVX512F && TSC_SSE2 && TSC_SSE
+    if (__builtin_expect(!!(local_clocksource.seq != global_clocksource->seq), 0)) {
         update_local_tscclocksource();
         // The update of the global environment is much larger than the time for 
         // thread scheduling and logical calculation, so you can jump out of the

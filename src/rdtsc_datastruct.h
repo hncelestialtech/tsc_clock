@@ -6,13 +6,16 @@
 
 struct tsc_clocksource {
     union {
-        __uint128_t align_var;
+        __uint128_t _;
+        __extension__
         struct {
             volatile double     coef;
             volatile double    offset;
-        }__;
-    }_;
-    char pad[TSC_SMP_ALIGN - sizeof(tsc_clocksource._)];
+        };
+    };
+    char pad[128 - sizeof(((struct tsc_clocksource*)0)->_)];
+    volatile int64_t             seq;
+    char pad[128 - sizeof(int64_t)];
     int64_t             base_tsc;
     int64_t             calibrate_interval;
     uint64_t            magic;

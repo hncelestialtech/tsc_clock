@@ -28,4 +28,11 @@ int rdtsc_clocksource_calibrate(void);
 */
 int rdtsc_clocksource_destroy(void);
 
+/**
+ * @brief
+ *      get calibrate interval
+ * @return int
+*/
+int64_t get_calibrate_interval(void);
+
 #endif // TSCCLOCKSOURCE_INCLUDE_H

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <time.h>
 
 void cleanup(int sig __attribute__((unused)))
 {
@@ -26,7 +27,7 @@ int main()
     sigaction(SIGINT, &act, &oldact);
 
     while(1) {
-        sleep(1);
+        nanosleep(get_calibrate_interval());
         rdtsc_clocksource_calibrate();
     }
 
